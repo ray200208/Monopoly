@@ -1,7 +1,4 @@
-import pygame
 import customtkinter as ctk
-print("monopoly")
-print("Saketh")
 import random
 import pygame
 import tkinter as tk
