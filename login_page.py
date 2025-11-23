@@ -1,3 +1,3 @@
 import pygame
-import customtkiner as ctk
+import customtkinter as ctk
 print("Saketh")
