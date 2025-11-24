@@ -73,20 +73,28 @@ def choice_screen():
                 running=False
         screen.fill((0,200,0))
         if button('2 Player',125,225,100,75,(255,0,0),(0,0,255)):
-            two_player_game()
-        elif button('3 Player',175,225,100,75,(255,0,0),(0,0,255)):
-            three_player_game()
-        elif button('4 Player',225,225,100,75,(255,0,0),(0,0,255)):
-            four_player_game()
+            player_game(2)
+        elif button('3 Player',205,225,100,75,(255,0,0),(0,0,255)):
+            player_game(3)
+        elif button('4 Player',285,225,100,75,(255,0,0),(0,0,255)):
+            player_game(4)
         pygame.display.update()
 
-def two_player_game():
+def player_game(n):
+    list_colours=['Blue','Yellow','Red','Green']
+    colour_players=[]
+    for i in range(n):
+        colour_players.append(random.choice(list_colours))
+        list_colours.remove(colour_players[i])
     running=True
     while running:
         for event in pygame.event.get():
             if event.type==pygame.QUIT:
                 running=False
-        screen.fill((0,200,0))
+    screen.fill((0,0,250))
+    pygame.display.update()
+    
+        
     
 mainscreen()
 pygame.quit()
