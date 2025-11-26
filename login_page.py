@@ -1,7 +1,7 @@
 import pygame
 import random
-import sys
-
+import sys,subprocess,os,pathlib
+current_dir = pathlib.Path(__file__).parent.resolve()
 pygame.init()
 
 fullscreen = True
@@ -115,15 +115,12 @@ def player_game(n):
         if play_button_rect.collidepoint(mouse_pos):
             pygame.draw.rect(screen,(0,200,0),play_button_rect)
             if click:
-                main_board()
-                return
+                subprocess.Popen(['python',os.path.join(current_dir,'main.py')])
         else:
             pygame.draw.rect(screen,(0,150,0),play_button_rect)
         play_text=font.render('PLAY',True,(255,255,255))
         play_text_rect=play_text.get_rect(center=play_button_rect.center)
         screen.blit(play_text,play_text_rect)
-            
-
         pygame.display.update()
         clock.tick(60)
 mainscreen()

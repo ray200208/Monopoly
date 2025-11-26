@@ -1,9 +1,9 @@
 import pygame
 import random
 import time
-import sys
-
-
+import sys,subprocess
+from login_page import w
+print(w)
 class Space:
     def __init__(self, name, type, price=0, rent=0):
         self.name = name
@@ -208,16 +208,6 @@ def main_board():
         draw_text_centered("BACK", button_font, WHITE, screen, back_rect.centerx, back_rect.centery)
         pygame.display.update()
         clock.tick(60)
-        
-def main():
-    while True:
-        result = mainscreen()
-        if result == "play":
-            choice = choice_screen()
-            if choice != "back":
-                player_game(choice)
-                main_board()
-
-if __name__ == "__main__":
-    main()
+       
+main_board()
     
