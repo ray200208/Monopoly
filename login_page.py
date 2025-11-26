@@ -1,7 +1,7 @@
 import pygame
 import random
-import sys
-
+import sys,subprocess,os,pathlib
+current_dir = pathlib.Path(__file__).parent.resolve()
 pygame.init()
 
 fullscreen = True
@@ -59,7 +59,8 @@ def mainscreen():
         if logo_image:
             screen.blit(logo_image, ((w-logo_image.get_width())//2, 75))
         if button("PLAY A GAME", w//2 - 175, 300, 350, 100, RED, BLUE):
-            return "play"
+            choice_screen()
+            return 'play'
         pygame.display.update()
         clock.tick(60)
 
@@ -71,11 +72,11 @@ def choice_screen():
                 sys.exit()
         screen.fill(GREEN)
         if button("2 Player", w//4 - 50, 225, 100, 75, RED, BLUE):
-            return 2
+            player_game(2)
         if button("3 Player", w//2 - 50, 225, 100, 75, RED, BLUE):
-            return 3
+            player_game(3)
         if button("4 Player", 3*w//4 - 50, 225, 100, 75, RED, BLUE):
-            return 4
+            player_game(4)
         if button("BACK", w - 120, h - 80, 100, 60, RED, BLUE):
             return "back"
         pygame.display.update()
@@ -114,14 +115,13 @@ def player_game(n):
         if play_button_rect.collidepoint(mouse_pos):
             pygame.draw.rect(screen,(0,200,0),play_button_rect)
             if click:
-                main_board()
-                return
+                subprocess.Popen(['python',os.path.join(current_dir,'main.py')])
         else:
             pygame.draw.rect(screen,(0,150,0),play_button_rect)
         play_text=font.render('PLAY',True,(255,255,255))
         play_text_rect=play_text.get_rect(center=play_button_rect.center)
         screen.blit(play_text,play_text_rect)
-            
-
         pygame.display.update()
         clock.tick(60)
+mainscreen()
+	

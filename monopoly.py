@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 
+
 pygame.init()
 
 fullscreen = True
@@ -339,7 +340,94 @@ def main():
             choice = choice_screen()
             if choice != "back":
                 player_game(choice)
-                main_board()
+class Bank:
+    def __init__(self):
+        self.notes={500: 50, 100: 50, 50: 50, 20: 50, 10: 50, 1: 50}
+        
+    def total_money(self):
+        return sum(den * i for den, i in self.notes.items())
+    
+    def withdraw(self, amount):
+        result = {}
+        for den in sorted(self.notes.keys(), reverse = True):
+            if amount <= 0:
+                break
+            needed = amount // den
+            take = min(needed, self.notes[den])
+            if take > 0:
+                result[den] = take
+                self.notes[den] -= take
+                amount -= take*den
+            if amount>0:
+                for den, i in result.items():
+                    self.notes[den] += i
+                return None
+            return result
+        
+    def deposit(self, notes_dict):
+        for den, i in notes_dict.items():
+            self.notes[den] += i
+            
+
+        
+class Player:
+    def __init__(self, name, colour, bank):
+        self.name = name
+        self.colour = colour
+        self.properties = []
+        self.money = {}
+        start_cash = 1500
+        notes = bank.withdraw(start_cash)
+        self.money = notes
+        self.position = 0
+
+    def total_money(self):
+        return sum(den * i for den, i in self.money.items())
+
+    def receive_money(self, bank, amount):
+        notes = bank.withdraw(amount)
+        if notes is None:
+            print(f"{self.name} cannot receive exact amount from bank")
+            return False
+        for den, i in notes.items():
+            self.money[den] = self.money.get(den, 0) + count
+        return True
+
+    def pay_money(self, bank, amount):
+        if self.total_money() < amount:
+            print(f"{self.name} does not have enough money")
+            return False
+
+        payment = {}
+        remaining = amount
+        for den, i in sorted(self.money.keys(), reverse = True):
+            if remaining <=0:
+                break
+            available = self.money[den]
+            needed = remaining // den
+            take = min(needed, available)
+            if take > 0:
+                payment[den] = take
+                self.money[den] -= take
+                remaining -= take*den
+        if remaining > 0:
+            print(f"{self.name} cannot pay exact amount")
+            for den, i in payment.items():
+                self.money[den] += i
+            return False
+        
+        bank.deposit(payment)
+        return True
+    
+    def add_property(self, property_space):
+        self.properties.append(property_space)
+
+def roll_dice():
+    die1 = random.randint(1,6)
+    die2 = random.randint(1,6)
+    total = die1 + die2
+    doubles = (die1 == die2)
+    return total, doubles
 
 if __name__ == "__main__":
     main()

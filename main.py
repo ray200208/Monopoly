@@ -1,9 +1,9 @@
 import pygame
 import random
 import time
-import sys
-
-
+import sys,subprocess
+from login_page import w
+print(w)
 class Space:
     def __init__(self, name, type, price=0, rent=0):
         self.name = name
@@ -208,6 +208,7 @@ def main_board():
         draw_text_centered("BACK", button_font, WHITE, screen, back_rect.centerx, back_rect.centery)
         pygame.display.update()
         clock.tick(60)
+<<<<<<< HEAD
         
 def main():
     while True:
@@ -220,4 +221,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+=======
+       
+main_board()
     
+>>>>>>> edcf2c86f49ce4befd9747d2423019ea9ae8f586
