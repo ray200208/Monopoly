@@ -209,6 +209,7 @@ def main_board():
         pygame.display.update()
         clock.tick(60)
 <<<<<<< HEAD
+<<<<<<< HEAD
         
 def main():
     while True:
@@ -222,6 +223,8 @@ def main():
 if __name__ == "__main__":
     main()
 =======
+=======
+>>>>>>> edcf2c86f49ce4befd9747d2423019ea9ae8f586
        
 main_board()
     
