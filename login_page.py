@@ -59,7 +59,8 @@ def mainscreen():
         if logo_image:
             screen.blit(logo_image, ((w-logo_image.get_width())//2, 75))
         if button("PLAY A GAME", w//2 - 175, 300, 350, 100, RED, BLUE):
-            return "play"
+            choice_screen()
+            return 'play'
         pygame.display.update()
         clock.tick(60)
 
@@ -71,11 +72,11 @@ def choice_screen():
                 sys.exit()
         screen.fill(GREEN)
         if button("2 Player", w//4 - 50, 225, 100, 75, RED, BLUE):
-            return 2
+            player_game(2)
         if button("3 Player", w//2 - 50, 225, 100, 75, RED, BLUE):
-            return 3
+            player_game(3)
         if button("4 Player", 3*w//4 - 50, 225, 100, 75, RED, BLUE):
-            return 4
+            player_game(4)
         if button("BACK", w - 120, h - 80, 100, 60, RED, BLUE):
             return "back"
         pygame.display.update()
@@ -125,3 +126,5 @@ def player_game(n):
 
         pygame.display.update()
         clock.tick(60)
+mainscreen()
+	
