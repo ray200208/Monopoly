@@ -208,7 +208,7 @@ board = [
     Space('Old Kent Road','property',60,2),
     Space("Community Chest","community"),
     Space("Whitechapel Road","property",60,4),
-    Space("Income Tax","tax"),
+    Space("Income Tax","incometax"),
     Space("King's Cross Station","station",200,25),
     Space("The Angel Islington","property",100,6),
     Space("Chance","chance"),
@@ -242,7 +242,7 @@ board = [
     Space("Liverpool Street Station","station",200,25),
     Space("Chance","chance"),
     Space("Park Lane","property",350,35),
-    Space("Super Tax","tax"),
+    Space("Super Tax","supertax"),
     Space("Mayfair","property",400,50)
 ]
 
@@ -262,20 +262,22 @@ property_colours = {
     "special": (240,240,240)
 }
 
-
-tile_width = w//11
-tile_height = h//11
+board_w= w*9//11
+board_h=h
+tile_width = board_w//11
+tile_height = board_h//11
 tile_positions = []
-
+x_start = board_w - tile_width
+y_start = board_h - tile_height
 
 for i in range(11):
-    x = w - (i+1)*tile_width
-    y = h - tile_height
+    x = board_w - (i+1)*tile_width
+    y = board_h - tile_height
     tile_positions.append((x,y))
 
 for i in range(1,10):
     x = 0
-    y = h - (i+1)*tile_height
+    y = board_h - (i+1)*tile_height
     tile_positions.append((x,y))
 
 for i in range(11):
@@ -284,7 +286,7 @@ for i in range(11):
     tile_positions.append((x,y))
 
 for i in range(1,10):
-    x = w - tile_width
+    x = board_w - tile_width
     y = i*tile_height
     tile_positions.append((x,y))
 
@@ -374,11 +376,11 @@ def draw_tile(index, x, y):
                          (icon_x-4,icon_y+10,8,8))
         
 def draw_board(current_player_index):
-    screen.fill((0,120,0))
+    screen.fill((220.,220,220))
     for i,(x,y) in enumerate(tile_positions):
         draw_tile(i,x,y)
     if logo_image:
-        screen.blit(logo_image, ((w-logo_image.get_width())//2, (h-logo_image.get_height())//2))
+        screen.blit(logo_image, ((board_w-logo_image.get_width())//2, (board_h-logo_image.get_height())//2))
 
     for index, player in enumerate(players):
         px,py=tile_positions[player.position]
@@ -393,10 +395,14 @@ def draw_board(current_player_index):
 def main_panel(current_player_index):
     fonts=(normal_font, normal_font)
     
-    panel_width = 300
+    panel_width = w-board_w-40
     panel_height = 180
-    panel_x = screen.get_width() - panel_width - 20
+    panel_x = board_w+20
     panel_y = 20
+    button_w=120
+    button_h=30
+    button_x=panel_x+(panel_width-button_w)//2
+    button_y=panel_y+panel_height-35
 
     pygame.draw.rect(screen, (220, 255, 220),
                      (panel_x, panel_y, panel_width, panel_height),
@@ -423,15 +429,28 @@ def main_panel(current_player_index):
               normal_font, (0, 0, 0),
               screen, panel_x + 15, panel_y + 130)
     
-    button_rect = pygame.Rect(panel_x + 150, panel_y + 130, 130, 35)
-    pygame.draw.rect(screen, (255, 220, 180), button_rect, border_radius=8)
-    pygame.draw.rect(screen, (0, 0, 0), button_rect, 2, border_radius=8)
+    properties_button_rect = pygame.Rect(button_x, button_y,button_w, button_h)
+    pygame.draw.rect(screen, BLUE, properties_button_rect)
 
-    draw_text("PROPERTIES", normal_font, (0, 0, 0),
-              screen, button_rect.x + 10, button_rect.y + 8)
+    draw_text_centered("PROPERTIES", normal_font, WHITE,
+              screen, properties_button_rect.centerx, properties_button_rect.centery)
 
-    return button_rect
+    return properties_button_rect
 
+def properties_window():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button_rect.collidepoint(event.pos):
+                    return
+
+        prop_panel()
+        pygame.display.update()
+        clock.tick(60)
 
 def prop_panel():
     screen.fill((210,210,210))
@@ -459,70 +478,69 @@ def prop_panel():
     return back_button_rect
 
 def main_board():
+    global properties_button_rect
     while True:
+        properties_button_rect = draw_board(current_player_index)
+
+        if logo_image:
+            screen.blit(logo_image, ((board_w-logo_image.get_width())//2, (board_h-logo_image.get_height())//2))
+        pygame.draw.rect(screen, BLACK, back_rect)
+        draw_text_centered("BACK", button_font, WHITE, screen, back_rect.centerx, back_rect.centery)
+        pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if back_rect.collidepoint(event.pos):
-                    return  
-        screen.fill(WHITE)
-        draw_board(current_player_index)
-        if logo_image:
-            screen.blit(logo_image, ((w-logo_image.get_width())//2, (h-logo_image.get_height())//2))
-        pygame.draw.rect(screen, BLACK, back_rect)
-        draw_text_centered("BACK", button_font, WHITE, screen, back_rect.centerx, back_rect.centery)
-        pygame.display.update()
-        clock.tick(60)
+                    return
+
+                if properties_button_rect.collidepoint(event.pos):
+                    properties_window()
+                    
+                clock.tick(60)
         
 
 class Bank:
     def __init__(self):
-        self.notes={500: 50, 100: 50, 50: 50, 20: 50, 10: 50, 1: 50}
-        
-    def total_money(self):
-        return sum(den * i for den, i in self.notes.items())
-    
-    def withdraw(self, amount):
-        result = {}
-        original = self.notes.copy()
-        for den in sorted(self.notes.keys(), reverse = True):
-            if amount <= 0:
-                break
-            needed = amount // den
-            take = min(needed, self.notes[den])
-            if take > 0:
-                result[den] = take
-                self.notes[den] -= take
-                amount -= take*den
-        if amount>0:
-            self.notes = original
-            return None
-        
-        return result
-        
-    def deposit(self, notes_dict):
-        for den, i in notes_dict.items():
-            self.notes[den] += i
-            
+        self.total_money=5000000000
+        self.notes={}
+        self.denominations = [500,100,50,20,10,5,1]
 
+    def deposit(self, amount):
+        self.total_money+=amount
+
+    def withdraw(self, amount):
+        if amount<=0:
+            return {}
+        if self.total_money<amount:
+            return None
+        notes={}
+        remaining=amount
+        for d in self.denominations:
+            count = remaining // d
+            if count > 0:
+                notes[d] = count
+                remaining -= count * d
+        
+        self.total_money -= amount
+        
+        return notes
         
 class Player:
     def __init__(self, name, colour, bank):
         self.name = name
         self.colour = colour
         self.properties = []
-        self.money = {}
-        start_cash = 1500
-        notes = bank.withdraw(start_cash)
-        self.money = notes
+        self.money=bank.withdraw(1500)
         self.position = 0
         self.in_jail = False
         self.jail_turns = 0
-        self.has_get_out_of_jail=False
+        self.has_get_out_of_jail=0
 
     def total_money(self):
+        total=0
         return sum(den * i for den, i in self.money.items())
 
     def receive_money(self, bank, amount):
@@ -533,28 +551,16 @@ class Player:
             self.money[den] = self.money.get(den, 0) + i
         return True
 
-    def pay_money(self, bank, amount):
+    def pay_money(self, receiver, amount, bank):
         if self.total_money() < amount:
             return False
-
-        payment = {}
-        remaining = amount
-        for den in sorted(self.money.keys(), reverse = True):
-            if remaining <=0:
-                break
-            available = self.money[den]
-            needed = remaining // den
-            take = min(needed, available)
-            if take > 0:
-                payment[den] = take
-                self.money[den] -= take
-                remaining -= take*den
-        if remaining > 0:
-            for den, i in payment.items():
-                self.money[den] += i
-            return False
-        
-        bank.deposit(payment)
+        remaining_amount = self.total_money() - amount
+        self.money={}
+        self.receive_money(bank, remaining_amount)
+        if isinstance(receiver, Bank):
+            receiver.deposit(amount)
+        else:
+            receiver.receive_money(bank, amount)
         return True
     
     def add_property(self, property_space):
@@ -639,7 +645,7 @@ def apply_card_effect(player, bank, card):
         if player.total_money()>=50:
             choice = player_choice(player, f"{player.name}, pay 50 to get out?")
             if choice == 'yes':
-                player.pay_money(bank, 50)
+                player.pay_money(bank, 50, bank)
                 player.in_jail = False
                 player.jail_turns = 0
             else:
@@ -653,11 +659,11 @@ def apply_card_effect(player, bank, card):
         overlay_message(f"{player.name} receives ${effect} due to the card")
 
     elif isinstance(effect,int) and effect<0:
-        player.pay_money(bank, -effect)
+        player.pay_money(bank, -effect, bank)
         overlay_message(f"{player.name} pays ${-effect} due to the card")
 
     elif effect == 'free':
-        player.has_get_out_of_jail = True
+        player.has_get_out_of_jail+=1
         overlay_message(f"{player.name} got a Get Out of Jail card", duration = 1200)
 
 def draw_chance(player, bank):
@@ -681,64 +687,75 @@ def calculate_station_rent(owner):
 def handle_space(player, space, bank, dice_roll = 0):
     if space.type == 'property':
         if space.owner is None:
-            choice = player_choice(player, f"Buy {space.name} for {space.price}?")
-            if choice == 'yes' and player.total_money()>=space.price:
-                if player.pay_money(bank, space.price):
+            choice = player_choice(player, f"Buy {space.name} for ${space.price}?")
+            if choice == 'yes':
+                if player.total_money() < space.price:
+                    overlay_message(f"Not enough money to buy {space.name}", duration=1200)
+                elif player.pay_money(bank, space.price, bank):
                     player.add_property(space)
                     space.owner = player
                     overlay_message(f"{player.name} bought {space.name}", duration=1200)
                 else:
-                    overlay_message(f"{player.name} cannot pay to buy {space.name}", duration=1200)
+                    overlay_message(f"{player.name} failed to complete transaction", duration=1200)
             else:
                 overlay_message(f"{player.name} declined to buy {space.name}", duration=1200)
                 
         elif space.owner!=player:
             rent = space.rent
             overlay_message(f"{player.name} pays rent to {space.owner.name}", duration=1200)
-            player.pay_money(bank,rent)
+            player.pay_money(bank,rent, bank)
             space.owner.receive_money(bank, rent)
 
     elif space.type == 'station':
         if space.owner is None:
             choice = player_choice(player, f"Buy {space.name} for {space.price}?")
-            if choice == 'yes' and player.total_money()>=space.price:
-                if player.pay_money(bank, space.price):
+            if choice == 'yes':
+                if player.total_money() < space.price:
+                    overlay_message(f"Not enough money to buy {space.name}", duration=1200)
+                elif player.pay_money(bank, space.price, bank):
                     player.add_property(space)
                     space.owner = player
                     overlay_message(f"{player.name} bought {space.name}", duration=1200)
                 else:
-                    overlay_message("Not enough money", duration=1200)
+                    overlay_message(f"{player.name} failed to complete transaction", duration=1200)
             else:
                 overlay_message(f"{player.name} declined to buy {space.name}", duration=1200)
         
         elif space.owner!=player:
             rent = calculate_station_rent(space.owner)
             overlay_message(f"{player.name} pays rent to {space.owner.name}", duration=1200)
-            player.pay_money(bank, rent)
+            player.pay_money(bank, rent, bank)
             space.owner.receive_money(bank, rent)
-
+         
     elif space.type == 'utility':
         if space.owner is None:
             choice = player_choice(player, f"Buy {space.name} for {space.price}?")
-            if choice == 'yes' and player.total_money()>=space.price:
-                if player.pay_money(bank, space.price):
+            if choice=='yes':
+                if player.total_money() < space.price:
+                    overlay_message(f"Not enough money to buy {space.name}", duration=1200)
+                elif player.pay_money(bank, space.price, bank):
                     player.add_property(space)
                     space.owner = player
                     overlay_message(f"{player.name} bought {space.name}", duration=1200)
                 else:
-                    overlay_message("Not enough money", duration=1200)
+                    overlay_message(f"{player.name} failed to complete transaction", duration=1200)
             else:
                 overlay_message(f"{player.name} declined to buy {space.name}", duration=1200)
             
         elif space.owner!=player:
             rent = calculate_utility_rent(space.owner, dice_roll)
             overlay_message(f"{player.name} pays rent to {space.owner.name}",duration=1200)
-            player.pay_money(bank, rent)
+            player.pay_money(bank, rent, bank)
             space.owner.receive_money(bank, rent)
+        
 
-    elif space.type == 'tax':
-        overlay_message(f"{player.name} pays tax of {space.rent}",duration=1200)
-        player.pay_money(bank, space.rent)
+    elif space.type == 'incometax':
+        overlay_message(f"{player.name} pays tax of 200",duration=1200)
+        player.pay_money(bank, 200, bank)
+
+    elif space.type == 'supertax':
+        overlay_message(f"{player.name} pays tax of 100", duration = 1200)
+        player.pay_money(bank, 100, bank)
 
     elif space.type == 'chance':
         draw_chance(player, bank)
@@ -749,6 +766,10 @@ def handle_space(player, space, bank, dice_roll = 0):
     elif space.type == 'jail':
         if not player.in_jail:
             overlay_message(f"{player.name} is just visiting jail", duration=1200)
+        else:
+            if player.has_get_out_of_jail>0:
+                overlay_message(f"{player.name} has used one get out of jail free card")
+                player.has_get_out_of_jail-=1
 
     elif space.type == 'parking':
         overlay_message(f"{player.name} has landed on Free Parking! Collect 100", duration=1200)
@@ -786,9 +807,11 @@ def player_choice(player, message):
 
 def show_message(message):
     overlay_message(message, wait_for_ok=True)
-        
+    
 
-def player_turn(player, bank, turn_index):
+def player_turn(player, bank, turn_index, properties_button_rect):
+    
+    
     if player.in_jail:
         player.jail_turns+=1
         choice = player_choice(player, f"{player.name}, pay $50 to get out of jail?")
@@ -796,7 +819,6 @@ def player_turn(player, bank, turn_index):
             player.pay_money(bank, 50)
             player.in_jail = False
             player.jail_turns = 0
-
         elif player.jail_turns >= 3:
             player.in_jail = False
             player.jail_turns = 0
@@ -804,11 +826,15 @@ def player_turn(player, bank, turn_index):
             overlay_message(f"{player.name} skips turn in Jail",duration=1200)
             return
         
+
     doubles_count = 0
     while True:
-        roll_button = pygame.Rect(w//2 - 50, h - 200, 100,50)
+        roll_button = pygame.Rect(board_w//2 - 50, board_h - 200, 100,50)
         rolled = False
         while not rolled:
+    
+            properties_button_rect = draw_board(turn_index)
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -816,19 +842,23 @@ def player_turn(player, bank, turn_index):
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if roll_button.collidepoint(event.pos):
                         rolled = True
-            screen.fill(WHITE)
-            draw_board(turn_index)
+            
+                    elif properties_button_rect.collidepoint(event.pos):
+                        open_properties_window(players)
+                    
+                        properties_button_rect = draw_board(turn_index) 
+
             pygame.draw.rect(screen, GREEN, roll_button)
             draw_text_centered("ROLL DICE", normal_font, WHITE, screen, roll_button.centerx, roll_button.centery)
             pygame.display.update()
             clock.tick(60)
 
+        
         dice_x=roll_button.x+roll_button.width//2-60
         dice_y=roll_button.y-80
 
         for i in range(10):
             temp1, temp2 = random.randint(1,6), random.randint(1,6)
-            screen.fill(WHITE)
             draw_board(turn_index)
             draw_dice(temp1, temp2, dice_x, dice_y)
             pygame.draw.rect(screen, GREEN, roll_button)
@@ -842,18 +872,18 @@ def player_turn(player, bank, turn_index):
         previous_pos = player.position
         player.position = (player.position + total) % len(board)
 
-        screen.fill(WHITE)
+    
         draw_board(turn_index)
         draw_dice(die1, die2,dice_x, dice_y)
         pygame.display.update()
         pygame.time.delay(500)
     
         if player.position < previous_pos:
-            overlay_message(f"{player.name} has passed Go! Collect 200", duration=1200)
+            overlay_message(f"{player.name} has passed Go! Collect $200", duration=1200)
             player.receive_money(bank, 200)
         
         space = board[player.position]
-        handle_space(player, space, bank, total)
+        handle_space(player, space, bank, total) 
 
         if doubles:
             doubles_count+=1
@@ -863,12 +893,60 @@ def player_turn(player, bank, turn_index):
                 player.in_jail = True
                 player.jail_turns = 0
                 break
-
             else:
                 overlay_message(f"{player.name} rolled doubles! Roll again", duration=1000)
-
         else:
             break
+
+def open_properties_window(players):
+    running = True
+    W = 550
+    H = 500
+    font_title = pygame.font.Font(None, 40)
+    font_sub = pygame.font.Font(None, 28)
+    win_surf = pygame.Surface((W, H))
+    win_rect = pygame.Rect(
+        screen.get_width()//2 - W//2, screen.get_height()//2 - H//2, W, H
+    )
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                
+        win_surf.fill((245, 245, 245))
+        pygame.draw.rect(win_surf, (0, 0, 0), (0, 0, W, H), 3)
+
+        title = font_title.render("ALL PLAYERS' PROPERTIES", True, (0, 0, 0))
+        win_surf.blit(title, (20, 15))
+
+        y = 80
+        for player in players:
+            header = font_sub.render(f"{player.name} ({player.colour})", True, (0, 0, 0))
+            win_surf.blit(header, (20, y))
+            y += 30
+
+            if len(player.properties) == 0:
+                no_prop = font_sub.render("  - No properties", True, (100, 100, 100))
+                win_surf.blit(no_prop, (30, y))
+                y += 30
+                
+            else:
+                for prop in player.properties:
+                    item = font_sub.render("  - " + prop.name, True, (50, 50, 50))
+                    win_surf.blit(item, (30, y))
+                    y += 28
+            y += 18
+            
+        screen.blit(win_surf, (win_rect.x, win_rect.y))
+        pygame.display.flip()
+        clock.tick(60)
+    
+
 
 def start_game(num_players, player_names, player_colors):
     global players
@@ -881,41 +959,16 @@ def start_game(num_players, player_names, player_colors):
         player.in_jail = False
 
     turn_index = 0
-    show_prop=False
-    back_button=None
-    button_rect=None
     
     while True:
-        screen.fill(WHITE)
-        if show_prop:
-            back_button=prop_panel()
-        else:
-            button_rect=draw_board(turn_index)
-            y = 170
-            for p in players:
-                draw_text_centered(f"{p.name} (${p.total_money()})", normal_font,
-                               (0,0,0), screen, w//2, y)
-                y+=30
-                
+        screen.fill((220,220,220))
+        properties_button_rect = draw_board(turn_index)
         pygame.display.update()
 
-        for event in pygame.event.get():
-            if event.type==pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type==pygame.MOUSEBUTTONDOWN:
-                mx,my=event.pos
-                if show_prop:
-                    if back_button_rect.collidepoint(mx,my):
-                        show_prop=False
-                else:
-                    button_rect=draw_board(turn_index)
-                    if button_rect.collidepoint(mx,my):
-                        show_prop=True
+        player_turn(players[turn_index], bank, turn_index, properties_button_rect)
+        
+        turn_index = (turn_index + 1) % num_players
 
-        if not show_prop:
-            player_turn(players[turn_index], bank, turn_index)
-            turn_index = (turn_index + 1) % num_players
 
 def main():
     while True:
