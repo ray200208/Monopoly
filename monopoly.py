@@ -16,18 +16,40 @@ else:
 pygame.display.set_caption("MONOPOLY")
 clock = pygame.time.Clock()
 
-property_font = pygame.font.Font(None, 12)
-menu_font = pygame.font.Font(None, 30)
-button_font = pygame.font.Font(None, 30)
-popup_font = pygame.font.Font(None, 40)        
-normal_font = pygame.font.Font(None, 20)
-big_font = pygame.font.Font(None, 48)
+try:
+    property_font = pygame.font.SysFont('arial', 11, bold=True)
+    menu_font = pygame.font.SysFont('arial', 36, bold=True)
+    button_font = pygame.font.SysFont('arial', 24, bold=True)
+    popup_font = pygame.font.SysFont('arial', 32, bold=True)
+    normal_font = pygame.font.SysFont('arial', 18)
+    big_font = pygame.font.SysFont('arial', 48, bold=True)
+    title_font = pygame.font.SysFont('arial', 64, bold=True)
 
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-RED = (255,0,0)
-BLUE = (0,0,255)
-GREEN = (0,200,0)
+except:
+    property_font = pygame.font.Font(None, 12)
+    menu_font = pygame.font.Font(None, 36)
+    button_font = pygame.font.Font(None, 24)
+    popup_font = pygame.font.Font(None, 32)
+    normal_font = pygame.font.Font(None, 18)
+    big_font = pygame.font.Font(None, 48)
+    title_font = pygame.font.Font(None, 64)
+    
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (220, 53, 69)
+BLUE = (13, 110, 253)
+GREEN = (25, 135, 84)
+DARK_GREEN = (10, 80, 50)
+LIGHT_GRAY = (248, 249, 250)
+MEDIUM_GRAY = (173, 181, 189)
+DARK_GRAY = (52, 58, 64)
+GOLD = (255, 193, 7)
+ORANGE = (253, 126, 20)
+PURPLE = (111, 66, 193)
+TEAL = (32, 201, 151)
+CREAM = (255, 248, 220)
+BOARD_BG = (205, 230, 208)
+
 
 HOUSE_COSTS = {
     "brown": 50,
@@ -71,7 +93,24 @@ except Exception as e:
 
 back_rect = pygame.Rect(w//2-50, h-180, 100,50)
 back_button_rect = pygame.Rect(0,0,0,0)
+players = []
 
+def draw_shadow(surface, rect, offset=5):
+    
+    shadow_surf = pygame.Surface((rect.width + offset, rect.height + offset), pygame.SRCALPHA)
+    shadow_surf.fill((0, 0, 0, 60))
+    surface.blit(shadow_surf, (rect.x + offset//2, rect.y + offset//2))
+
+def draw_gradient_rect(surface, rect, color1, color2):
+    for i in range(rect.height):
+        ratio = i / rect.height
+        r = int(color1[0] * (1 - ratio) + color2[0] * ratio)
+        g = int(color1[1] * (1 - ratio) + color2[1] * ratio)
+        b = int(color1[2] * (1 - ratio) + color2[2] * ratio)
+        pygame.draw.line(surface, (r, g, b),
+                        (rect.x, rect.y + i),
+                        (rect.x + rect.width, rect.y + i))
+        
 def draw_text(text, font, color, surface, x, y, center = False):
     surf = font.render(text, True, color)
     rect = surf.get_rect()
@@ -84,18 +123,28 @@ def draw_text(text, font, color, surface, x, y, center = False):
 def draw_text_centered(text, font, color, surface, x, y):
     draw_text(text, font, color, surface, x, y, center = True)
 
-def button(text, x, y, w_rect, h_rect, color, hover_color):
+def button(text, x, y, w_rect, h_rect, color, hover_color, text_color=WHITE):
+
     mouse_pos = pygame.mouse.get_pos()
     clicked = False
     rect=pygame.Rect(x,y,w_rect,h_rect)
+
     if rect.collidepoint(mouse_pos):
-        pygame.draw.rect(screen, hover_color, rect)
+        draw_shadow(screen, rect, 5)
+        color1 = tuple(min(255, c + 30) for c in hover_color)
+        color2 = hover_color
+        draw_gradient_rect(screen, rect, color1, color2)
+        pygame.draw.rect(screen, WHITE, rect, 3, border_radius=12)
         if pygame.mouse.get_pressed()[0]:
             clicked = True
     else:
-        pygame.draw.rect(screen, color, rect)
+        draw_shadow(screen, rect, 3)
+        color1 = tuple(min(255, c + 20) for c in color)
+        color2 = color
+        draw_gradient_rect(screen, rect, color1, color2)
+        pygame.draw.rect(screen, tuple(max(0, c - 50) for c in color), rect, 2, border_radius=12)
 
-    text_surf = menu_font.render(text, True, WHITE)
+    text_surf = button_font.render(text, True, text_color)
     text_rect = text_surf.get_rect(center=rect.center)
     screen.blit(text_surf, text_rect)
     return clicked
@@ -107,32 +156,54 @@ def mainscreen():
                 pygame.quit()
                 sys.exit()
                 
-        screen.fill(GREEN)
+        draw_gradient_rect(screen, pygame.Rect(0, 0, w, h), DARK_GREEN, GREEN)
+       
+        pygame.draw.circle(screen, GOLD, (50, 50), 30, 5)
+        pygame.draw.circle(screen, GOLD, (w-50, 50), 30, 5)
+        pygame.draw.circle(screen, GOLD, (50, h-50), 30, 5)
+        pygame.draw.circle(screen, GOLD, (w-50, h-50), 30, 5)
+       
+        title_shadow = title_font.render("MONOPOLY", True, BLACK)
+        title_text = title_font.render("MONOPOLY", True, GOLD)
+        screen.blit(title_shadow, (w//2 - title_text.get_width()//2 + 4, 84))
+        screen.blit(title_text, (w//2 - title_text.get_width()//2, 80))
+
         if logo_image:
-            screen.blit(logo_image, ((w-logo_image.get_width())//2, 75))
+            logo_rect = logo_image.get_rect(center=(w//2, 250))
+            screen.blit(logo_image, logo_rect)
             
-        if button("PLAY A GAME", w//2 - 175, 300, 350, 100, RED, BLUE):
+        if button("START GAME", w//2 - 175, h//2 + 50, 350, 80, RED, (255, 69, 58)):
             return "play"
+       
+        draw_text_centered("Enhanced Edition", normal_font, CREAM, screen, w//2, h - 50)
         
         pygame.display.update()
         clock.tick(60)
 
 def choice_screen():
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
                 
-        screen.fill(GREEN)
-        if button("2 Player", w//4 - 50, 225, 100, 75, RED, BLUE):
+        draw_gradient_rect(screen, pygame.Rect(0, 0, w, h), DARK_GREEN, GREEN)
+        draw_text_centered("SELECT NUMBER OF PLAYERS", big_font, GOLD, screen, w//2, 100)
+       
+        button_y = h//2 - 50
+        button_spacing = w // 5
+       
+        if button("2", button_spacing - 60, button_y, 120, 100, BLUE, (52, 152, 219)):
             return 2
-        if button("3 Player", w//2 - 50, 225, 100, 75, RED, BLUE):
+        if button("3", 2*button_spacing - 60, button_y, 120, 100, BLUE, (52, 152, 219)):
             return 3
-        if button("4 Player", 3*w//4 - 50, 225, 100, 75, RED, BLUE):
+        if button("4", 3*button_spacing - 60, button_y, 120, 100, BLUE, (52, 152, 219)):
             return 4
-        if button("BACK", w - 120, h - 80, 100, 60, RED, BLUE):
+       
+        if button("BACK", w - 140, h - 100, 120, 60, MEDIUM_GRAY, DARK_GRAY):
             return "back"
+       
         pygame.display.update()
         clock.tick(60)
 
@@ -157,29 +228,51 @@ def name_entry_screen(num_players):
     cursor_interval=500
 
     while True:
-        screen.fill(GREEN)
-        draw_text_centered("Enter Player Names", big_font, WHITE, screen, w//2,80)
+        draw_gradient_rect(screen, pygame.Rect(0, 0, w, h), DARK_GREEN, GREEN)
+        draw_text_centered("ENTER PLAYER NAMES", big_font, GOLD, screen, w//2, 80)
+
 
         for i in range(num_players):
-            if active_input ==i:
-                color='#FFD700'
+            rect = input_rects[i]
+           
+            if active_input == i:
+                border_color = GOLD
+                bg_color = WHITE
+                draw_shadow(screen, rect, 4)
             else:
-                color=WHITE
-            pygame.draw.rect(screen, color, input_rects[i])
-            pygame.draw.rect(screen, color, input_rects[i],2)
-            draw_text(names[i], normal_font, BLACK, screen, input_rects[i].x+10, input_rects[i].y+10)
-            draw_text_centered(f"Color: {assigned_colours[i]}", normal_font, WHITE, screen, input_rects[i].right+100, input_rects[i].centery)
+                border_color = CREAM
+                bg_color = LIGHT_GRAY
+           
+            pygame.draw.rect(screen, bg_color, rect, border_radius=10)
+            pygame.draw.rect(screen, border_color, rect, 3, border_radius=10)
+           
+            draw_text(names[i] if names[i] else f"Player {i+1}", normal_font,
+                     DARK_GRAY if names[i] else MEDIUM_GRAY,
+                     screen, rect.x+15, rect.y+17)
 
-            if active_input==i and cursor_visible:
-                text_width= normal_font.size(names[i])[0]
-                cursor_x=input_rects[i].x+10+text_width
-                cursor_y=input_rects[i].y+5
-                pygame.draw.line(screen, BLACK, (cursor_x, cursor_y), (cursor_x, cursor_y+input_rects[i].height-10),2)
-                
-        pygame.draw.rect(screen, RED, start_button_rect)
-        draw_text_centered("START", normal_font, WHITE, screen, start_button_rect.centerx, start_button_rect.centery)
-        pygame.draw.rect(screen, RED, back_button_rect)
-        draw_text_centered("Back", button_font, WHITE, screen, back_button_rect.centerx, back_button_rect.centery)
+            color_map = {"Blue": BLUE, "Red": RED, "Green": GREEN, "Yellow": GOLD}
+            color_circle_x = rect.right + 40
+            pygame.draw.circle(screen, color_map[assigned_colours[i]],
+                             (color_circle_x, rect.centery), 20)
+            pygame.draw.circle(screen, WHITE, (color_circle_x, rect.centery), 20, 3)
+            draw_text(assigned_colours[i], normal_font, WHITE, screen,
+                     color_circle_x + 35, rect.centery - 10)
+
+            if active_input == i and cursor_visible and names[i]:
+                text_width = normal_font.size(names[i])[0]
+                cursor_x = rect.x + 15 + text_width
+                cursor_y = rect.y + 10
+                pygame.draw.line(screen, DARK_GRAY, (cursor_x, cursor_y),
+                               (cursor_x, cursor_y + rect.height - 20), 2)
+       
+        if button("START GAME", start_button_rect.x, start_button_rect.y,
+                 start_button_rect.width, start_button_rect.height, GREEN, TEAL):
+            if all(name.strip() != "" for name in names):
+                return names, assigned_colours
+       
+        if button("Back", back_button_rect.x, back_button_rect.y,
+                 back_button_rect.width, back_button_rect.height, MEDIUM_GRAY, DARK_GRAY):
+            return 'back'
 
         for event in pygame.event.get():
             if event.type==pygame.QUIT:
@@ -320,8 +413,6 @@ board_h=h
 tile_width = board_w//11
 tile_height = board_h//11
 tile_positions = []
-x_start = board_w - tile_width
-y_start = board_h - tile_height
 
 for i in range(11):
     x = board_w - (i+1)*tile_width
@@ -377,119 +468,131 @@ def draw_tile(index, x, y):
 
     color = property_colours[color_key]
 
-
-    pygame.draw.rect(screen, WHITE, (x,y,tile_width,tile_height))
-    pygame.draw.rect(screen, BLACK, (x,y,tile_width,tile_height), 2)
+    tile_rect = pygame.Rect(x, y, tile_width, tile_height)
+    pygame.draw.rect(screen, CREAM, tile_rect)
+    pygame.draw.rect(screen, DARK_GRAY, tile_rect, 2)
 
  
     if ttype in ("property","station","utility"):
-        pygame.draw.rect(screen, color, (x, y, tile_width, tile_height//6))
+        color_bar_rect = pygame.Rect(x, y, tile_width, tile_height//7)
+        pygame.draw.rect(screen, color, color_bar_rect)
 
 
     if ttype in ("chance", "community"):
-        name_y = y + 5
+        name_y = y + 10
         
     else:
-        name_y = y + tile_height//6 + 5
+        name_y = y + tile_height//6 + 10
 
-    draw_text_centered(name, property_font, BLACK, screen, x + tile_width//2, name_y)
-
+    words = name.split()
+    if len(words) > 2:
+        line1 = " ".join(words[:2])
+        line2 = " ".join(words[2:])
+        draw_text_centered(line1, property_font, BLACK, screen, x + tile_width//2, name_y - 5)
+        draw_text_centered(line2, property_font, BLACK, screen, x + tile_width//2, name_y + 8)
+    else:
+        draw_text_centered(name, property_font, BLACK, screen, x + tile_width//2, name_y)
 
     icon_x = x + tile_width//2
-    icon_y = name_y + 25
+    icon_y = y + tile_height//2 + 10
 
   
     if ttype == "station":
+        pygame.draw.rect(screen, BLACK, (icon_x-15, icon_y, 30, 14), 0, border_radius=3)
+        pygame.draw.circle(screen, DARK_GRAY, (icon_x-6, icon_y+14), 5)
+        pygame.draw.circle(screen, DARK_GRAY, (icon_x+6, icon_y+14), 5)
         
-        pygame.draw.rect(screen, BLACK, (icon_x-15, icon_y, 30, 15), 2)
-        pygame.draw.circle(screen, BLACK, (icon_x-8, icon_y+18), 5, 2)
-        pygame.draw.circle(screen, BLACK, (icon_x+8, icon_y+18), 5, 2)
-
     elif ttype == "utility":
         if "Electric" in name:
-            points = [(icon_x-6,icon_y-6), (icon_x,icon_y-2),
-                      (icon_x+6,icon_y-6), (icon_x,icon_y+8)]
-            pygame.draw.polygon(screen,(255,215,0),points)
+            points = [(icon_x-8, icon_y-8), (icon_x, icon_y-3),
+                     (icon_x+8, icon_y-8), (icon_x, icon_y+10)]
+            pygame.draw.polygon(screen, GOLD, points)
+            
         else:
-            pygame.draw.circle(screen,(0,0,255),(icon_x,icon_y),8)
-            pygame.draw.polygon(screen,(0,0,255),
+            pygame.draw.circle(screen, BLUE, (icon_x, icon_y), 10)
+            pygame.draw.polygon(screen,BLUE,
                                 [(icon_x-8,icon_y),(icon_x+8,icon_y),(icon_x,icon_y+16)])
-
+            
     elif ttype == "chance":
-        pygame.draw.circle(screen,(255,140,0), (icon_x,icon_y+10),5)
-        pygame.draw.lines(screen,(255,140,0),False,[(icon_x-10,icon_y-10),
-                                    (icon_x+10,icon_y-10), (icon_x+10,icon_y),
-                                    (icon_x,icon_y)],4)
+        pygame.draw.circle(screen, ORANGE, (icon_x, icon_y+12), 6)
+        pygame.draw.lines(screen, ORANGE, False,
+                        [(icon_x-12, icon_y-10), (icon_x+12, icon_y-10),
+                         (icon_x+12, icon_y+2), (icon_x, icon_y+2)], 4)
+        
     elif ttype == "community":
-        pygame.draw.rect(screen,(0,120,255),
-                         (icon_x-15,icon_y,30,20),2)
-        pygame.draw.rect(screen,(0,120,255),
-                         (icon_x-15,icon_y-8,30,10),2)
-        pygame.draw.rect(screen,(0,120,255),
-                         (icon_x-4,icon_y+10,8,8))
+        pygame.draw.rect(screen, BLUE, (icon_x-18, icon_y, 36, 20), 2, border_radius=3)
+        pygame.draw.rect(screen, BLUE, (icon_x-5, icon_y+12, 10, 8))
         
 def draw_board(current_player_index):
-    screen.fill((220.,220,220))
-    for i,(x,y) in enumerate(tile_positions):
+     screen.fill(BOARD_BG)
+   
+     center_rect = pygame.Rect(tile_width, tile_height,
+                             board_w - 2*tile_width, board_h - 2*tile_height)
+     pygame.draw.rect(screen, (180, 210, 180), center_rect)
+    
+     for i,(x,y) in enumerate(tile_positions):
         draw_tile(i,x,y)
-    if logo_image:
-        screen.blit(logo_image, ((board_w-logo_image.get_width())//2, (board_h-logo_image.get_height())//2))
+        
+     if logo_image:
+        logo_rect = logo_image.get_rect(center=(board_w//2, board_h//2))
+        screen.blit(logo_image, logo_rect)
 
-    for index, player in enumerate(players):
+     for index, player in enumerate(players):
         px,py=tile_positions[player.position]
-        offset_x=5+(index%2)*20
-        offset_y=5+(index//2)*20
-        colour_map = {"Blue": (0,0,255), "Red": (255,0,0), "Green": (0,200,0), "Yellow": (255,255,0)}
-        pygame.draw.circle(screen, colour_map[player.colour],(px+offset_x+15, py+offset_y+15),10)
+        offset_x=8+(index%2)*25
+        offset_y=8+(index//2)*25
+        colour_map = {"Blue": BLUE, "Red": RED, "Green": GREEN, "Yellow": GOLD}
+        token_color = colour_map[player.colour]
+        pygame.draw.circle(screen, token_color, (px + offset_x + 15, py + offset_y + 15), 12)
+        pygame.draw.circle(screen, WHITE, (px + offset_x + 15, py + offset_y + 15), 12, 2)
 
-    properties_button_rect, build_bt_rect=main_panel(current_player_index)
-    return properties_button_rect, build_bt_rect
+     properties_button_rect, build_bt_rect=main_panel(current_player_index)
+     return properties_button_rect, build_bt_rect
     
 def main_panel(current_player_index):
-    fonts=(normal_font, normal_font)
-    
-    panel_width = w-board_w-40
-    panel_height = 180
-    panel_x = board_w+20
+    panel_width = w - board_w - 40
+    panel_height = 220
+    panel_x = board_w + 20
     panel_y = 20
-    button_w=120
-    button_h=30
-    button_x=panel_x+(panel_width-button_w)//2
-    button_y=panel_y+panel_height-35
-    build_bt_w=120
-    build_bt_h=30
-    build_bt_x=panel_x+(panel_width-build_bt_w)//2
-    build_bt_y=panel_y+panel_height-70
-    build_bt_rect=pygame.Rect(build_bt_x, build_bt_y, build_bt_w, build_bt_h)
-
-    pygame.draw.rect(screen, (220, 255, 220),
-                     (panel_x, panel_y, panel_width, panel_height),
-                     border_radius=12)
-    pygame.draw.rect(screen, (0, 0, 0),
-                     (panel_x, panel_y, panel_width, panel_height), 3,
-                     border_radius=12)
-
+   
     player = players[current_player_index]
-
-    draw_text(f"Player: {player.name}", normal_font, (0, 0, 0),
-              screen, panel_x + 15, panel_y + 10)
-
-    pygame.draw.rect(screen, pygame.Color(player.colour),
-                     (panel_x + 15, panel_y + 45, 30, 30))
-    draw_text(f"Colour", normal_font, (0, 0, 0),
-              screen, panel_x + 55, panel_y + 50)
-
-    draw_text(f"Money: ${player.total_money()}", normal_font, (0, 0, 0),
-              screen, panel_x + 15, panel_y + 90)
-
-    
-    properties_button_rect = pygame.Rect(button_x, button_y,button_w, button_h)
-    pygame.draw.rect(screen, BLUE, properties_button_rect)
-
-    draw_text_centered("PROPERTIES", normal_font, WHITE,
-              screen, properties_button_rect.centerx, properties_button_rect.centery)
-    pygame.draw.rect(screen, GREEN, build_bt_rect)
+   
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+    draw_shadow(screen, panel_rect, 5)
+    draw_gradient_rect(screen, panel_rect, LIGHT_GRAY, WHITE)
+    pygame.draw.rect(screen, DARK_GRAY, panel_rect, 3, border_radius=15)
+   
+    color_map = {"Blue": BLUE, "Red": RED, "Green": GREEN, "Yellow": GOLD}
+    player_color = color_map[player.colour]
+   
+    pygame.draw.circle(screen, player_color, (panel_x + 30, panel_y + 35), 20)
+    pygame.draw.circle(screen, WHITE, (panel_x + 30, panel_y + 35), 20, 3)
+    draw_text(f"{player.name}", button_font, DARK_GRAY, screen, panel_x + 60, panel_y + 20)
+   
+    draw_text(f"Money: ${player.total_money()}", normal_font, GREEN, screen, panel_x + 15, panel_y + 70)
+   
+    prop_count = len(player.properties)
+    draw_text(f"Properties: {prop_count}", normal_font, DARK_GRAY, screen, panel_x + 15, panel_y + 100)
+   
+    button_w, button_h = 130, 35
+    button_x = panel_x + (panel_width - button_w) // 2
+    properties_button_rect = pygame.Rect(button_x, panel_y + panel_height - 80, button_w, button_h)
+    build_bt_rect = pygame.Rect(button_x, panel_y + panel_height - 40, button_w, button_h)
+   
+    mouse_pos = pygame.mouse.get_pos()
+   
+    if properties_button_rect.collidepoint(mouse_pos):
+        pygame.draw.rect(screen, (52, 152, 219), properties_button_rect, border_radius=8)
+    else:
+        pygame.draw.rect(screen, BLUE, properties_button_rect, border_radius=8)
+    draw_text_centered("PROPERTIES", normal_font, WHITE, screen, properties_button_rect.centerx, properties_button_rect.centery)
+   
+    if build_bt_rect.collidepoint(mouse_pos):
+        pygame.draw.rect(screen, TEAL, build_bt_rect, border_radius=8)
+    else:
+        pygame.draw.rect(screen, GREEN, build_bt_rect, border_radius=8)
     draw_text_centered("BUILD", normal_font, WHITE, screen, build_bt_rect.centerx, build_bt_rect.centery)
+   
     return properties_button_rect, build_bt_rect
 
 def properties_window():
@@ -508,28 +611,29 @@ def properties_window():
         clock.tick(60)
 
 def prop_panel():
-    screen.fill((210,210,210))
-    draw_text_centered("All Player Properties", big_font, BLACK, screen, w//2, 40)
+    screen.fill(LIGHT_GRAY)
+    draw_text_centered("All Player Properties", big_font, DARK_GRAY, screen, w//2, 40)
     x=50
     y=100
     for player in players:
-        draw_text(player.name, big_font, BLACK, screen, x,y)
-        y+=40
+        color_map = {"Blue": BLUE, "Red": RED, "Green": GREEN, "Yellow": GOLD}
+        draw_text(player.name, big_font, color_map[player.colour], screen, x, y)
+        y += 40
 
         if not player.properties:
-            draw_text("-None-", normal_font, BLACK, screen, x+40, y)
+            draw_text("-None-", normal_font, MEDIUM_GRAY, screen, x+40, y)
             y+=25
         else:
             for p in player.properties:
-                draw_text(f"{p.name}", normal_font, BLACK, screen, x+40,y)
+                draw_text(f"{p.name}", normal_font, DARK_GRAY, screen, x+40,y)
                 y+=25
         y+=25
 
     global back_button_rect
-    back_button_rect=pygame.Rect(w-160, h-80, 140,50)
-    pygame.draw.rect(screen, (255,180,180), back_button_rect)
-    pygame.draw.rect(screen, BLACK, back_button_rect, 2)
-    draw_text_centered("Back", normal_font, BLACK, screen, back_button_rect.centerx, back_button_rect.centery)
+    back_button_rect = pygame.Rect(w-160, h-80, 140, 50)
+    pygame.draw.rect(screen, RED, back_button_rect, border_radius=10)
+    pygame.draw.rect(screen, DARK_GRAY, back_button_rect, 2, border_radius=10)
+    draw_text_centered("Back", normal_font, WHITE, screen, back_button_rect.centerx, back_button_rect.centery)
     return back_button_rect
 
 def main_board():
@@ -539,7 +643,7 @@ def main_board():
 
         if logo_image:
             screen.blit(logo_image, ((board_w-logo_image.get_width())//2, (board_h-logo_image.get_height())//2))
-        pygame.draw.rect(screen, BLACK, back_rect)
+        pygame.draw.rect(screen, RED, back_rect, border_radius = 10)
         draw_text_centered("BACK", button_font, WHITE, screen, back_rect.centerx, back_rect.centery)
         pygame.display.update()
 
@@ -639,13 +743,13 @@ def draw_dice(die1,die2,x,y):
     if 1 <= die1 <= 6 and dice_images[die1 - 1]:
         screen.blit(dice_images[die1 - 1], (x, y))
     else:
-        pygame.draw.rect(screen, WHITE, (x,y,50,50))
+        pygame.draw.rect(screen, WHITE, (x, y, 60, 60), border_radius=8)
         draw_text(str(die1), normal_font, BLACK, screen, x+15, y+10)
             
     if 1 <= die2 <= 6 and dice_images[die2 - 1]:
         screen.blit(dice_images[die2 - 1], (x + 60, y))
     else:
-        pygame.draw.rect(screen, WHITE, (x+60,y,50,50))
+        pygame.draw.rect(screen, WHITE, (x+70, y, 60, 60), border_radius=8)
         draw_text(str(die2), normal_font, BLACK, screen, x+75, y+10)
 
 def roll_dice():
@@ -678,11 +782,18 @@ def overlay_message(message, duration=1200, wait_for_ok=False):
     overlay.set_alpha(200)
     overlay.fill((0,0,0))
     screen.blit(overlay, (0,0))
-    draw_text_centered(message, popup_font, WHITE, screen, w//2, h//2-40)
+
+    msg_rect = pygame.Rect(w//2 - 300, h//2 - 100, 600, 200)
+    draw_shadow(screen, msg_rect, 8)
+    draw_gradient_rect(screen, msg_rect, LIGHT_GRAY, WHITE)
+    pygame.draw.rect(screen, DARK_GRAY, msg_rect, 4, border_radius=15)
+    
+    draw_text_centered(message, popup_font, DARK_GRAY, screen, w//2, h//2-40)
     ok_button = pygame.Rect(w//2-40, h//2+20, 80, 40)
 
     if wait_for_ok:
-        pygame.draw.rect(screen, GREEN, ok_button)
+        pygame.draw.rect(screen, GREEN, ok_button, border_radius = 10)
+        pygame.draw.rect(screen, DARK_GRAY, ok_button, 3, border_radius=10)
         draw_text_centered("OK", normal_font, WHITE, screen, ok_button.centerx, ok_button.centery)
         pygame.display.update()
 
@@ -968,21 +1079,22 @@ def open_development_window(player, bank):
 
     running=True
     while running:
-        win_surf.fill((240,240,240))
-        pygame.draw.rect(win_surf, (200,200,200), (0,0,win_w,win_h),5)
-        draw_text_centered("PROPERTY DEVELOPMENT", popup_font, BLACK,win_surf, win_w//2, 20)
+        win_surf.fill(LIGHT_GRAY)
+        pygame.draw.rect(win_surf, DARK_GRAY, (0, 0, win_w, win_h), 5, border_radius=15)
+        draw_text_centered("PROPERTY DEVELOPMENT", popup_font, DARK_GRAY, win_surf, win_w//2, 30)
 
-        close_bt_rect=pygame.Rect(win_w-70,10,60,30)
-        pygame.draw.rect(win_surf, RED, close_bt_rect)
+        close_bt_rect = pygame.Rect(win_w-80, 10, 70, 35)
+        pygame.draw.rect(win_surf, RED, close_bt_rect, border_radius=8)
+        pygame.draw.rect(win_surf, DARK_GRAY, close_bt_rect, 2, border_radius=8)
         draw_text_centered("CLOSE", normal_font, WHITE, win_surf, close_bt_rect.centerx, close_bt_rect.centery)
-        y_pos=60
-        button_rects={}
+       
+        y_pos = 70
+        button_rects = {}
         for color, props in monopolies.items():
-            
-            
-            draw_text_centered(f"Group: {color.upper()} (House Cost: ${props[0].house_price})", 
-                               button_font, BLACK, win_surf, win_w // 2, y_pos)
-            y_pos += 30
+            draw_text_centered(f"Group: {color.upper()} (House Cost: ${props[0].house_price})",
+                               button_font, DARK_GRAY, win_surf, win_w // 2, y_pos)
+            y_pos += 35
+
             
             for prop in props:
                 rent = prop.get_current_rent(True)
@@ -993,9 +1105,9 @@ def open_development_window(player, bank):
                 min_houses = min(p.houses for p in props)
                 can_build = prop.houses == min_houses and prop.houses < 4
                 
-                text_color = BLACK
+                text_color = BDARK_GRAY
                 if not can_build and prop.houses < 4 and not prop.hotel:
-                    text_color = (200, 0, 0) 
+                    text_color = RED
                 if prop.hotel:
                     text_color = BLUE
 
@@ -1007,11 +1119,11 @@ def open_development_window(player, bank):
                 house_enabled = not prop.is_mortgaged and not prop.hotel and prop.houses < 4 and prop.houses == min_houses
                 
                 if house_enabled:
-                    pygame.draw.rect(win_surf, GREEN, house_btn_rect)
+                    pygame.draw.rect(win_surf, GREEN, house_btn_rect, border_radius=6)
                     draw_text_centered("Buy House", normal_font, WHITE, win_surf, house_btn_rect.centerx, house_btn_rect.centery)
                     button_rects[(prop.name, 'house')] = (house_btn_rect, prop, props)
                 else:
-                    pygame.draw.rect(win_surf, (150, 150, 150), house_btn_rect)
+                    pygame.draw.rect(win_surf, MEDIUM_GRAY, house_btn_rect,border_radius=6)
                     draw_text_centered("N/A", normal_font, BLACK, win_surf, house_btn_rect.centerx, house_btn_rect.centery)
 
             
@@ -1019,11 +1131,11 @@ def open_development_window(player, bank):
                 hotel_enabled = not prop.is_mortgaged and prop.houses == 4 and not prop.hotel
                 
                 if hotel_enabled:
-                    pygame.draw.rect(win_surf, BLUE, hotel_btn_rect)
+                    pygame.draw.rect(win_surf, BLUE, hotel_btn_rect,border_radius=6)
                     draw_text_centered("Buy Hotel", normal_font, WHITE, win_surf, hotel_btn_rect.centerx, hotel_btn_rect.centery)
                     button_rects[(prop.name, 'hotel')] = (hotel_btn_rect, prop, props)
                 else:
-                    pygame.draw.rect(win_surf, (150, 150, 150), hotel_btn_rect)
+                    pygame.draw.rect(win_surf, MEDIUM_GRAY, hotel_btn_rect,border_radius=6)
                     draw_text_centered("N/A", normal_font, BLACK, win_surf, hotel_btn_rect.centerx, hotel_btn_rect.centery)
                 
                 y_pos += 40
@@ -1122,12 +1234,20 @@ def player_choice(player, message):
     overlay.set_alpha(190)
     overlay.fill((0,0,0))
     screen.blit(overlay, (0,0))
+
+    msg_rect = pygame.Rect(w//2 - 250, h//2 - 120, 500, 240)
+    draw_shadow(screen, msg_rect, 8)
+    draw_gradient_rect(screen, msg_rect, LIGHT_GRAY, WHITE)
+    pygame.draw.rect(screen, DARK_GRAY, msg_rect, 4, border_radius=15)
     
     yes_button = pygame.Rect(w//2 - 100, h//2, 80,50)
     no_button = pygame.Rect(w//2 + 20, h//2, 80,50)
-    draw_text_centered(message, popup_font, WHITE, screen, w//2, h//2-80)
-    pygame.draw.rect(screen, GREEN, yes_button)
-    pygame.draw.rect(screen, RED, no_button)
+    draw_text_centered(message, popup_font, DARK_GRAY, screen, w//2, h//2-80)
+    pygame.draw.rect(screen, GREEN, yes_button, border_radius = 10)
+    pygame.draw.rect(screen, DARK_GRAY, yes_button, 3, border_radius=10)
+    pygame.draw.rect(screen, RED, no_button, border_radius=10)
+    pygame.draw.rect(screen, DARK_GRAY, no_button, 3, border_radius=10)
+    
     draw_text_centered("YES", normal_font, WHITE, screen, yes_button.centerx, yes_button.centery)
     draw_text_centered("NO", normal_font, WHITE, screen, no_button.centerx, no_button.centery)
     pygame.display.update()
@@ -1216,7 +1336,16 @@ def player_turn(player, bank, turn_index):
         while not rolled:
             screen.fill(WHITE)
             properties_button_rect, build_bt_rect = draw_board(turn_index)
-            pygame.draw.rect(screen, GREEN, roll_button)
+
+            mouse_pos = pygame.mouse.get_pos()
+            if roll_button.collidepoint(mouse_pos):
+                draw_shadow(screen, roll_button, 5)
+                draw_gradient_rect(screen, roll_button, TEAL, GREEN)
+                pygame.draw.rect(screen, WHITE, roll_button, 3, border_radius=12)
+            else:
+                draw_shadow(screen, roll_button, 3)
+                draw_gradient_rect(screen, roll_button, GREEN, DARK_GREEN)
+                pygame.draw.rect(screen, DARK_GRAY, roll_button, 2, border_radius=12)
             draw_text_centered("ROLL DICE", normal_font, WHITE, screen, roll_button.centerx, roll_button.centery)
             pygame.display.flip()
             
@@ -1248,7 +1377,13 @@ def player_turn(player, bank, turn_index):
             temp1, temp2 = random.randint(1,6), random.randint(1,6)
             draw_board(turn_index)
             draw_dice(temp1, temp2, dice_x, dice_y)
-            pygame.draw.rect(screen, GREEN, roll_button)
+            mouse_pos = pygame.mouse.get_pos()
+            if roll_button.collidepoint(mouse_pos):
+                draw_gradient_rect(screen, roll_button, TEAL, GREEN)
+                pygame.draw.rect(screen, WHITE, roll_button, 3, border_radius=12)
+            else:
+                draw_gradient_rect(screen, roll_button, GREEN, DARK_GREEN)
+                pygame.draw.rect(screen, DARK_GRAY, roll_button, 2, border_radius=12)
             draw_text_centered("ROLL DICE", normal_font, WHITE, screen, roll_button.centerx, roll_button.centery)
             pygame.display.update()
             pygame.time.delay(60)
@@ -1338,6 +1473,7 @@ def open_properties_window(players):
             
                 if event.button == 4: 
                     scroll_offset = min(0, scroll_offset + scroll_speed)
+
                 elif event.button == 5: 
                     
                     scroll_offset = max(-max_scroll, scroll_offset - scroll_speed)
@@ -1346,7 +1482,7 @@ def open_properties_window(players):
                 running = False
 
         win_surf = pygame.Surface((win_w, win_h))
-        win_surf.fill((240, 240, 240)) 
+        win_surf.fill(LIGHT_GRAY)
         clip_rect = pygame.Rect(20, TOP_PADDING, win_w - 40, VIEWABLE_HEIGHT) 
         
 
@@ -1356,7 +1492,9 @@ def open_properties_window(players):
         
         for player in players:
             player_color = player.color if hasattr(player, 'color') else player.colour
-            
+            color_map = {"Blue": BLUE, "Red": RED, "Green": GREEN, "Yellow": GOLD}
+            display_color = color_map.get(player_color, DARK_GRAY)            
+
             header = popup_font.render(f"{player.name} (${player.total_money()})", True, player_color)
             win_surf.blit(header, (20, y))
             y += 30
@@ -1376,43 +1514,31 @@ def open_properties_window(players):
             y += 18
         win_surf.set_clip(None)
 
-        
+        pygame.draw.rect(win_surf, DARK_GRAY, (0, 0, win_w, win_h), 5, border_radius=15)
         screen.blit(win_surf, (win_rect.x, win_rect.y))
         
     
-        title = popup_font.render("PLAYER PROPERTIES", True, BLACK)
+        title = popup_font.render("PLAYER PROPERTIES", True, DARK_GRAY)
         screen.blit(title, (win_x + 20, win_y + 20))
         
-        
-        pygame.draw.rect(screen, RED, back_button_rect)
+        pygame.draw.rect(screen, RED, back_button_rect, border_radius=10)
+        pygame.draw.rect(screen, DARK_GRAY, back_button_rect, 2, border_radius=10)
         draw_text_centered("Back", button_font, WHITE, screen, back_button_rect.centerx, back_button_rect.centery)
 
        
         if max_scroll > 0:
             scrollbar_width = 10
-            
-            
             scrollbar_height_ratio = VIEWABLE_HEIGHT / total_content_height
             scrollbar_thumb_height = VIEWABLE_HEIGHT * scrollbar_height_ratio
-            
             scrollbar_thumb_height = max(20, min(scrollbar_thumb_height, VIEWABLE_HEIGHT)) 
-
-            
             scroll_norm = -scroll_offset / max_scroll 
-            
-            
             track_y_start = win_y + TOP_PADDING
             track_h = VIEWABLE_HEIGHT
-           
             thumb_y = track_y_start + (track_h - scrollbar_thumb_height) * scroll_norm
-            
-            scrollbar_rect = pygame.Rect(win_x + win_w - scrollbar_width - 10, track_y_start, scrollbar_width, track_h)
-            
+            scrollbar_rect = pygame.Rect(win_x + win_w - scrollbar_width - 10, track_y_start, scrollbar_width, track_h) 
             thumb_rect = pygame.Rect(scrollbar_rect.x, thumb_y, scrollbar_width, scrollbar_thumb_height)
-            
-       
-            pygame.draw.rect(screen, (200, 200, 200), scrollbar_rect)
-            pygame.draw.rect(screen, (150, 150, 150), thumb_rect)
+            pygame.draw.rect(screen, (200, 200, 200), scrollbar_rect, border_radius=5)
+            pygame.draw.rect(screen, MEDIUM_GRAY, thumb_rect, border_radius=5)
         
         pygame.display.flip()
         clock.tick(60)
@@ -1430,7 +1556,7 @@ def start_game(num_players, player_names, player_colors):
     turn_index = 0
     
     while True:
-        screen.fill((220,220,220))
+        screen.fill(BOARD_BG)
         draw_board(turn_index)
         pygame.display.update()
         player_turn(players[turn_index], bank, turn_index)
@@ -1447,6 +1573,3 @@ def main():
             
 if __name__ == "__main__":
     main()
-
-
-
