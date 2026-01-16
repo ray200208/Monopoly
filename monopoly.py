@@ -1,21 +1,24 @@
-import pygame
-import random
-import sys
+import pygame #Game engine
+import random #Used for dice rolls, card draws and assignments
+import sys #Used for pygame.quit()
 
-pygame.init()
+
+pygame.init() #Initializes all pygame modules
 
 fullscreen = True
 if fullscreen:
-    screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN) #uses entire monitor
     w, h = screen.get_size()
 
-else:
+else: #In case of run-time errors 
     w, h = 1200, 1200
     screen = pygame.display.set_mode((w,h))
 
-pygame.display.set_caption("MONOPOLY")
-clock = pygame.time.Clock()
+pygame.display.set_caption("MONOPOLY") #Window title
+clock = pygame.time.Clock() #Limits max fps to 60
 
+#Try except block is used to make sure it runs in any operating system. 
+#The except block uses default font avaialable in the pygame library leaving no scope for errors.
 try:
     property_font = pygame.font.SysFont('arial', 11, bold=True)
     menu_font = pygame.font.SysFont('arial', 36, bold=True)
@@ -74,25 +77,25 @@ color_counts = {
     "utility": 2 
 }
     
-dice_images = []
+dice_images = [] #To store all the images of the dice from numbers 1-6
 for i in range(1,7):
     try:
-        img=pygame.image.load(f"dice{i}.png").convert()
-        img = pygame.transform.scale(img, (50,50))
+        img=pygame.image.load(f"dice{i}.png").convert() #Convert is used to maintain the fps and converts to screen's pixel format
+        img = pygame.transform.scale(img, (50,50)) #Resized to a dice's size
         dice_images.append(img)
-    except Exception as e:
-        print(f"Failed to load dice image dice{i}.png:",e)
-        dice_images.append(None)
+    except Exception as e: #The error message from python is stored in e
+        print(f"Failed to load dice image dice{i}.png:",e) #We can find out which dice didn't load and why.
+        dice_images.append(None) #None is used as placeholder for the failed ones
         
 try:
-    logo_image = pygame.image.load("monopoly_logo.jpeg").convert_alpha()
+    logo_image = pygame.image.load("monopoly_logo.jpeg").convert_alpha() #conver_aplha helps in ensures that the logo blends in smoothly with the background
     logo_image = pygame.transform.scale(logo_image, (350, 175))
 except Exception as e:
     print("Failed to load logo:", e)
     logo_image = None
 
-back_rect = pygame.Rect(w//2-50, h-180, 100,50)
-back_button_rect = pygame.Rect(0,0,0,0)
+back_rect = pygame.Rect(w//2-50, h-180, 100,50) 
+back_button_rect = pygame.Rect(0,0,0,0)  #Placeholder gets redefined later
 players = []
 
 def draw_shadow(surface, rect, offset=5):
